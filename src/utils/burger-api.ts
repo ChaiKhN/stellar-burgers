@@ -4,7 +4,13 @@ import { TIngredient, TOrder, TOrdersData, TUser } from './types';
 const URL = process.env.BURGER_API_URL;
 
 const checkResponse = <T>(res: Response): Promise<T> =>
-  res.ok ? res.json() : res.json().then((err) => Promise.reject(err));
+  res.ok
+    ? res.json()
+    : res
+        .json()
+        .then((err) =>
+          Promise.reject(new Error(err.message || `Ошибка: ${res.status}`))
+        );
 
 type TServerResponse<T> = {
   success: boolean;
@@ -28,7 +34,7 @@ export const refreshToken = (): Promise<TRefreshResponse> =>
     .then((res) => checkResponse<TRefreshResponse>(res))
     .then((refreshData) => {
       if (!refreshData.success) {
-        return Promise.reject(refreshData);
+        return Promise.reject(new Error('Ошибка обновления токена'));
       }
       localStorage.setItem('refreshToken', refreshData.refreshToken);
       setCookie('accessToken', refreshData.accessToken);
@@ -76,7 +82,7 @@ export const getIngredientsApi = () =>
     .then((res) => checkResponse<TIngredientsResponse>(res))
     .then((data) => {
       if (data?.success) return data.data;
-      return Promise.reject(data);
+      return Promise.reject(new Error('Ошибка загрузки ингредиентов'));
     });
 
 export const getFeedsApi = () =>
@@ -84,7 +90,7 @@ export const getFeedsApi = () =>
     .then((res) => checkResponse<TFeedsResponse>(res))
     .then((data) => {
       if (data?.success) return data;
-      return Promise.reject(data);
+      return Promise.reject(new Error('Ошибка получения заказов'));
     });
 
 export const getOrdersApi = () =>
@@ -92,11 +98,11 @@ export const getOrdersApi = () =>
     method: 'GET',
     headers: {
       'Content-Type': 'application/json;charset=utf-8',
-      authorization: getCookie('accessToken')
+      authorization: getCookie('accessToken') || ''
     } as HeadersInit
   }).then((data) => {
     if (data?.success) return data.orders;
-    return Promise.reject(data);
+    return Promise.reject(new Error('Ошибка получения заказов пользователя'));
   });
 
 type TNewOrderResponse = TServerResponse<{
@@ -109,14 +115,12 @@ export const orderBurgerApi = (data: string[]) =>
     method: 'POST',
     headers: {
       'Content-Type': 'application/json;charset=utf-8',
-      authorization: getCookie('accessToken')
+      authorization: getCookie('accessToken') || ''
     } as HeadersInit,
-    body: JSON.stringify({
-      ingredients: data
-    })
+    body: JSON.stringify({ ingredients: data })
   }).then((data) => {
     if (data?.success) return data;
-    return Promise.reject(data);
+    return Promise.reject(new Error('Ошибка оформления заказа'));
   });
 
 type TOrderResponse = TServerResponse<{
@@ -154,7 +158,7 @@ export const registerUserApi = (data: TRegisterData) =>
     .then((res) => checkResponse<TAuthResponse>(res))
     .then((data) => {
       if (data?.success) return data;
-      return Promise.reject(data);
+      return Promise.reject(new Error('Ошибка регистрации'));
     });
 
 export type TLoginData = {
@@ -169,12 +173,15 @@ export const loginUserApi = (data: TLoginData) =>
       'Content-Type': 'application/json;charset=utf-8'
     },
     body: JSON.stringify(data)
-  })
-    .then((res) => checkResponse<TAuthResponse>(res))
-    .then((data) => {
-      if (data?.success) return data;
-      return Promise.reject(data);
-    });
+  }).then((res) =>
+    res.ok
+      ? res.json()
+      : res
+          .json()
+          .then((err) =>
+            Promise.reject(new Error(err.message || 'Ошибка входа'))
+          )
+  );
 
 export const forgotPasswordApi = (data: { email: string }) =>
   fetch(`${URL}/password-reset`, {
@@ -187,7 +194,7 @@ export const forgotPasswordApi = (data: { email: string }) =>
     .then((res) => checkResponse<TServerResponse<{}>>(res))
     .then((data) => {
       if (data?.success) return data;
-      return Promise.reject(data);
+      return Promise.reject(new Error('Ошибка запроса восстановления'));
     });
 
 export const resetPasswordApi = (data: { password: string; token: string }) =>
@@ -201,7 +208,7 @@ export const resetPasswordApi = (data: { password: string; token: string }) =>
     .then((res) => checkResponse<TServerResponse<{}>>(res))
     .then((data) => {
       if (data?.success) return data;
-      return Promise.reject(data);
+      return Promise.reject(new Error('Ошибка сброса пароля'));
     });
 
 type TUserResponse = TServerResponse<{ user: TUser }>;
@@ -209,7 +216,7 @@ type TUserResponse = TServerResponse<{ user: TUser }>;
 export const getUserApi = () =>
   fetchWithRefresh<TUserResponse>(`${URL}/auth/user`, {
     headers: {
-      authorization: getCookie('accessToken')
+      authorization: getCookie('accessToken') || ''
     } as HeadersInit
   });
 
@@ -218,7 +225,7 @@ export const updateUserApi = (user: Partial<TRegisterData>) =>
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json;charset=utf-8',
-      authorization: getCookie('accessToken')
+      authorization: getCookie('accessToken') || ''
     } as HeadersInit,
     body: JSON.stringify(user)
   });
