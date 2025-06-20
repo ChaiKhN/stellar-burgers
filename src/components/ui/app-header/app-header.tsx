@@ -7,6 +7,7 @@ import {
   Logo,
   ProfileIcon
 } from '@zlden/react-developer-burger-ui-components';
+import { Link } from 'react-router-dom';
 
 export const AppHeaderUI: FC<TAppHeaderUIProps> = ({ userName }) => (
   <header className={styles.header}>
@@ -14,11 +15,21 @@ export const AppHeaderUI: FC<TAppHeaderUIProps> = ({ userName }) => (
       <div className={styles.menu_part_left}>
         <>
           <BurgerIcon type={'primary'} />
-          <p className='text text_type_main-default ml-2 mr-10'>Конструктор</p>
+          <Link
+            to='/'
+            className={'text text_type_main-default ml-2 mr-10 ' + styles.link}
+          >
+            Конструктор
+          </Link>
         </>
         <>
           <ListIcon type={'primary'} />
-          <p className='text text_type_main-default ml-2'>Лента заказов</p>
+          <Link
+            to='/feed'
+            className={'text text_type_main-default ml-2 ' + styles.link}
+          >
+            Лента заказов
+          </Link>
         </>
       </div>
       <div className={styles.logo}>
@@ -26,9 +37,12 @@ export const AppHeaderUI: FC<TAppHeaderUIProps> = ({ userName }) => (
       </div>
       <div className={styles.link_position_last}>
         <ProfileIcon type={'primary'} />
-        <p className='text text_type_main-default ml-2'>
+        <Link
+          to='/profile'
+          className={'text text_type_main-default ml-2 ' + styles.link}
+        >
           {userName || 'Личный кабинет'}
-        </p>
+        </Link>
       </div>
     </nav>
   </header>
