@@ -1,35 +1,36 @@
 import { FC, SyntheticEvent, useState } from 'react';
 import { LoginUI } from '@ui-pages';
-import { useDispatch } from '../../services/store';
-import { setCookie } from '../../utils/cookie';
-import { loginUserThunk } from '../../services/slices/userSlice';
+import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from '../../services/store';
+import {
+  clearError,
+  getError,
+  getIsInitUser,
+  setLoginUser
+} from '../../services/slices/userSlice';
 
 export const Login: FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorText, setErrorText] = useState('');
+
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const sInitUser = useSelector(getIsInitUser);
+  const error = useSelector(getError);
 
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault();
-    setErrorText('');
+    dispatch(setLoginUser({ email, password }));
+    dispatch(clearError());
 
-    dispatch(loginUserThunk({ email, password }))
-      .unwrap()
-      .then((response) => {
-        // Сохраняем токены
-        setCookie('accessToken', response.accessToken);
-        localStorage.setItem('refreshToken', response.refreshToken);
-      })
-      .catch((err: Error) => {
-        console.error('Ошибка при логине:', err);
-        setErrorText(err.message || 'Неверный email или пароль');
-      });
+    if (sInitUser) {
+      navigate('/');
+    }
   };
 
   return (
     <LoginUI
-      errorText={errorText}
+      errorText={error}
       email={email}
       setEmail={setEmail}
       password={password}

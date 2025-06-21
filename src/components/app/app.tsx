@@ -11,152 +11,126 @@ import {
 } from '@pages';
 import '../../index.css';
 import styles from './app.module.css';
-
-import {
-  AppHeader,
-  BurgerConstructor,
-  IngredientDetails,
-  Modal,
-  OrderInfo,
-  ProtectedRoute
-} from '@components';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { useDispatch } from '../../services/store';
-import { getUserApiThunk, init } from '../../services/slices/userSlice';
+import { AppHeader, IngredientDetails, Modal, OrderInfo } from '@components';
+import { ProtectedRoute } from '../protected-route/protected-route';
 import { useEffect } from 'react';
-import { getCookie } from '../../utils/cookie';
-import { fetchIngredients } from '../../services/slices/ingredientsSlice';
+import { useDispatch } from '../../services/store';
+import { ingredientFromApi } from '../../services/slices/ingredientSlice';
+import { getUser } from '../../services/slices/userSlice';
 
 const App = () => {
-  const dispatch = useDispatch();
+  const location = useLocation();
+  const background = location.state && location.state.background;
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    const token = getCookie('accessToken');
-    dispatch(fetchIngredients());
-    if (token) {
-      dispatch(getUserApiThunk());
-    } else {
-      dispatch(init());
+    dispatch(ingredientFromApi());
+    if (localStorage.getItem('refreshToken')) {
+      dispatch(getUser());
     }
   }, []);
-
-  const location = useLocation();
-  const backgroundLocation = location.state?.background;
-  const onClose = () => {
+  const handleModalClose = () => {
     navigate(-1);
   };
 
   return (
-    <div className={styles.app}>
-      <AppHeader />
-      <Routes location={backgroundLocation || location}>
-        <Route path='*' element={<NotFound404 />} />
-        <Route path='/' element={<ConstructorPage />} />
-        <Route path='/feed' element={<Feed />} />
-        <Route path='/feed/:number' element={<OrderInfo />} />
-        <Route path='/ingredients/:id' element={<IngredientDetails />} />
-
-        <Route
-          path='/login'
-          element={
-            <ProtectedRoute onlyUnAuth>
-              <Login />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path='/register'
-          element={
-            <ProtectedRoute onlyUnAuth>
-              <Register />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path='/forgot-password'
-          element={
-            <ProtectedRoute onlyUnAuth>
-              <ForgotPassword />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path='/reset-password'
-          element={
-            <ProtectedRoute onlyUnAuth>
-              <ResetPassword />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route path='/profile'>
+    <>
+      <div className={styles.app}>
+        <AppHeader />
+        <Routes location={background || location}>
+          <Route path='/' element={<ConstructorPage />} />
+          <Route path='/feed' element={<Feed />} />
+          <Route path='*' element={<NotFound404 />} />
           <Route
-            index
+            path='/login'
+            element={
+              <ProtectedRoute onlyUnAuth>
+                <Login />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/register'
+            element={
+              <ProtectedRoute onlyUnAuth>
+                <Register />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/forgot-password'
+            element={
+              <ProtectedRoute onlyUnAuth>
+                <ForgotPassword />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/reset-password'
+            element={
+              <ProtectedRoute onlyUnAuth>
+                <ResetPassword />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/profile'
             element={
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
             }
           />
-          <Route path='orders'>
-            <Route
-              index
-              element={
-                <ProtectedRoute>
-                  <ProfileOrders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path=':number'
-              element={
-                <ProtectedRoute>
-                  <OrderInfo />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-        </Route>
-      </Routes>
-
-      {backgroundLocation && (
-        <Routes>
           <Route
-            path='/feed/:number'
-            element={
-              <Modal title={'Подробнее о заказе'} onClose={onClose}>
-                <OrderInfo />
-              </Modal>
-            }
-          />
-
-          <Route
-            path='/ingredients/:id'
-            element={
-              <Modal title={'Подробнее об ингридиенте'} onClose={onClose}>
-                <IngredientDetails />
-              </Modal>
-            }
-          />
-
-          <Route
-            path='/profile/orders/:number'
+            path='/profile/orders'
             element={
               <ProtectedRoute>
-                <Modal title={'Подробнее о заказе'} onClose={onClose}>
-                  <OrderInfo />
-                </Modal>
+                <ProfileOrders />
               </ProtectedRoute>
             }
           />
         </Routes>
-      )}
-    </div>
+        {background && (
+          <Routes>
+            <Route
+              path='/feed/:number'
+              element={
+                <Modal onClose={handleModalClose} title={'Информация о заказе'}>
+                  {' '}
+                  <OrderInfo />
+                  {'Информация о заказе'}
+                </Modal>
+              }
+            />
+            <Route
+              path='/ingredients/:id'
+              element={
+                <Modal onClose={handleModalClose} title={'Детали ингредиента'}>
+                  {' '}
+                  <IngredientDetails />{' '}
+                </Modal>
+              }
+            />
+            <Route
+              path='/profile/orders/:number'
+              element={
+                <ProtectedRoute>
+                  <Modal
+                    onClose={handleModalClose}
+                    title={'Информация о заказе'}
+                  >
+                    {' '}
+                    <OrderInfo />{' '}
+                  </Modal>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        )}
+      </div>
+    </>
   );
 };
-
 export default App;

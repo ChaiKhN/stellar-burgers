@@ -1,18 +1,14 @@
 import { ProfileUI } from '@ui-pages';
 import { FC, SyntheticEvent, useEffect, useState } from 'react';
-import {
-  selectUser,
-  updateUserApiThunk
-} from '../../services/slices/userSlice';
-import { useDispatch, useSelector } from '../../services/store';
-
+import { useSelector, useDispatch } from '../../services/store';
+import { getProfile, updateUser } from '../../services/slices/userSlice';
 export const Profile: FC = () => {
-  const user = useSelector(selectUser);
+  const user = useSelector(getProfile);
   const dispatch = useDispatch();
 
   const [formValue, setFormValue] = useState({
-    name: '',
-    email: '',
+    name: user.name,
+    email: user.email,
     password: ''
   });
 
@@ -22,7 +18,7 @@ export const Profile: FC = () => {
       name: user?.name || '',
       email: user?.email || ''
     }));
-  }, []);
+  }, [user]);
 
   const isFormChanged =
     formValue.name !== user?.name ||
@@ -31,21 +27,14 @@ export const Profile: FC = () => {
 
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault();
-
-    dispatch(
-      updateUserApiThunk({
-        name: formValue.name,
-        email: formValue.email,
-        password: formValue.password
-      })
-    );
+    dispatch(updateUser(formValue));
   };
 
   const handleCancel = (e: SyntheticEvent) => {
     e.preventDefault();
     setFormValue({
-      name: user?.name || '',
-      email: user?.email || '',
+      name: user.name,
+      email: user.email,
       password: ''
     });
   };
