@@ -149,3 +149,5 @@ export const { getRequestUser, getProfile, getIsInitUser, getError } =
   userSlice.selectors;
 
 export const user = userSlice.reducer;
+
+export { initialState };

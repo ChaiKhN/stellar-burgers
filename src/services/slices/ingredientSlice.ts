@@ -4,7 +4,8 @@ import { TIngredient, TConstructorIngredient } from '@utils-types';
 
 export type TConstructorBurgerState = {
   ingredients: TIngredient[];
-  isLoading: Boolean;
+  isLoading: boolean;
+  error: string | null;
   constructorItems: {
     bun: TConstructorIngredient | null;
     ingredients: TConstructorIngredient[];
@@ -14,6 +15,7 @@ export type TConstructorBurgerState = {
 const initialState: TConstructorBurgerState = {
   ingredients: [],
   isLoading: false,
+  error: null,
   constructorItems: { bun: null, ingredients: [] }
 };
 
@@ -49,13 +51,14 @@ const constructorBurgerSlice = createSlice({
     ) => {
       state.constructorItems.ingredients =
         state.constructorItems.ingredients.filter(
-          (item: { id: string }) => item.id !== payload.id
+          (item) => item.id !== payload.id
         );
     },
     resetConstructor: (state) => {
       state.constructorItems.bun = null;
       state.constructorItems.ingredients = [];
       state.isLoading = false;
+      state.error = null;
     },
     moveIngredientUp: (state, { payload }: PayloadAction<number>) => {
       const index = state.constructorItems.ingredients[payload];
@@ -85,19 +88,22 @@ const constructorBurgerSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(ingredientFromApi.pending, (state) => {
       state.isLoading = true;
+      state.error = null;
     });
     builder.addCase(ingredientFromApi.fulfilled, (state, action) => {
       state.isLoading = false;
       state.ingredients = action.payload;
     });
-    builder.addCase(ingredientFromApi.rejected, (state) => {
+    builder.addCase(ingredientFromApi.rejected, (state, action) => {
       state.isLoading = false;
+      state.error = action.error.message || 'Не удалось загрузить ингредиенты';
     });
   }
 });
 
 export const { getIsLoading, getIngredient, getConstructorItems } =
   constructorBurgerSlice.selectors;
+
 export const {
   addBun,
   addIngredient,
@@ -106,4 +112,7 @@ export const {
   moveIngredientDown,
   resetConstructor
 } = constructorBurgerSlice.actions;
+
 export const constructorBurger = constructorBurgerSlice.reducer;
+
+export { initialState };

@@ -1,53 +1,52 @@
 import { getFeedsApi } from '@api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { TOrder } from '@utils-types';
+import { RootState } from '../store';
 
-export const getFeedOrders = createAsyncThunk(
-  'getFeedOrders/getFeedsApi',
-  getFeedsApi
-);
-
-interface IFeedState {
-  feeds: TOrder[];
+type TFeedState = {
+  orders: TOrder[];
   total: number;
-  todayTotal: number;
-  isLoading: boolean;
-}
-
-const initialState: IFeedState = {
-  feeds: [],
-  total: 0,
-  todayTotal: 0,
-  isLoading: false
+  totalToday: number;
+  loading: boolean;
+  error: string | undefined;
 };
 
+const initialState: TFeedState = {
+  orders: [],
+  total: 0,
+  totalToday: 0,
+  loading: false,
+  error: undefined
+};
+
+export const getFeedOrders = createAsyncThunk('feed/getAll', getFeedsApi);
+
 const feedSlice = createSlice({
-  name: 'feeds',
+  name: 'feed',
   initialState,
   reducers: {},
-  selectors: {
-    getFeed: (state) => state.feeds,
-    getLoading: (state) => state.isLoading,
-    getTotal: (state) => state.total,
-    getTodayTotal: (state) => state.todayTotal
-  },
   extraReducers: (builder) => {
-    builder.addCase(getFeedOrders.pending, (state) => {
-      state.isLoading = true;
-    });
-    builder.addCase(getFeedOrders.fulfilled, (state, action) => {
-      state.isLoading = false;
-      state.feeds = action.payload.orders;
-      state.total = action.payload.total;
-      state.todayTotal = action.payload.totalToday;
-    });
-    builder.addCase(getFeedOrders.rejected, (state) => {
-      state.isLoading = false;
-    });
+    builder
+      .addCase(getFeedOrders.pending, (state) => {
+        state.loading = true;
+        state.error = undefined;
+      })
+      .addCase(getFeedOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.orders = action.payload.orders;
+        state.total = action.payload.total;
+        state.totalToday = action.payload.totalToday;
+      })
+      .addCase(getFeedOrders.rejected, (state, action) => {
+        state.loading = false;
+        // Исправление: Записываем текст ошибки из action.payload
+        state.error = action.payload as string;
+      });
   }
 });
 
-export const { getFeed, getLoading, getTotal, getTodayTotal } =
-  feedSlice.selectors;
+export const getFeed = (state: RootState) => state.feeds.orders;
+export const getTotal = (state: RootState) => state.feeds.total;
+export const getTodayTotal = (state: RootState) => state.feeds.totalToday;
 
 export const feed = feedSlice.reducer;

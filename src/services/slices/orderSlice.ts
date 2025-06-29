@@ -96,3 +96,5 @@ export const { getOrder, getOrderDate, getRequest, getLoading } =
 export const { clearOrder } = orderSlice.actions;
 
 export const order = orderSlice.reducer;
+
+export { initialState };
